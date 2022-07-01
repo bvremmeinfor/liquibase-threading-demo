@@ -44,9 +44,26 @@ public class CreateDatabaseThreadingTest {
     @Before
     public void setup() {
         /**
-         * This is a static - not synchronized
+         * Scope manager is static property on Scope.
+         * Wrap and synchronized if concurrent execution is expected.
          */
-        Scope.setScopeManager(new ThreadLocalScopeManager());
+
+
+        final Scope rootScope = Scope.getCurrentScope();
+
+        /*
+         * Synchronize access to singletons in root scope by wrapping the scope
+         */
+        final SynchronizedScope synchronizedScope = new SynchronizedScope(rootScope, null);
+        final ThreadLocalScopeManager threadLocalScopeManager = new ThreadLocalScopeManager(synchronizedScope);
+
+        Scope.setScopeManager(threadLocalScopeManager);
+
+        /*
+         * Set-scope-manager sets scope (in current thread, using unsynchronized),
+         * clear it, we want fallback to synchronized root-scope in all cases.
+         */
+        threadLocalScopeManager.clearScopeForCurrentThread();
     }
 
     @After
@@ -109,10 +126,10 @@ public class CreateDatabaseThreadingTest {
                     new ClassLoaderResourceAccessor(),
                     new JdbcConnection(con));
 
-//            final List<ChangeSet> pending = liquibase.listUnrunChangeSets(new Contexts(), new LabelExpression());
-//            if (pending.isEmpty()) {
-//                fail("Expected pending database changesets");
-//            }
+            final List<ChangeSet> pending = liquibase.listUnrunChangeSets(new Contexts(), new LabelExpression());
+            if (pending.isEmpty()) {
+                fail("Expected pending database changesets");
+            }
 
             liquibase.update(new Contexts(), new LabelExpression());
 
