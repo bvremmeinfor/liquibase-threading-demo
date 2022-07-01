@@ -3,11 +3,15 @@ package org.example.lbthreading;
 import liquibase.Contexts;
 import liquibase.LabelExpression;
 import liquibase.Liquibase;
+import liquibase.Scope;
+import liquibase.ScopeManager;
 import liquibase.changelog.ChangeSet;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.LiquibaseException;
 import liquibase.resource.ClassLoaderResourceAccessor;
 import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.sql.Connection;
@@ -37,6 +41,13 @@ public class CreateDatabaseThreadingTest {
     private final ExecutorService executor = Executors.newCachedThreadPool();
     private final Map<String, MemoryDatabase> liveConnections = new ConcurrentHashMap<>();
 
+    @Before
+    public void setup() {
+        /**
+         * This is a static - not synchronized
+         */
+        Scope.setScopeManager(new ThreadLocalScopeManager());
+    }
 
     @After
     public void tearDown() {
@@ -44,8 +55,8 @@ public class CreateDatabaseThreadingTest {
         shutdownExecutorService();
     }
 
-
     @Test
+    @Ignore("Ignore - we do not want the warmup!")
     public void itCanMaintainSingleDatabase() {
         final int threadCount = 1;
         assertMaintainDatabases(threadCount);
@@ -57,7 +68,7 @@ public class CreateDatabaseThreadingTest {
         /*
          * 4 threads seems to be sufficient to provoke most errors
          */
-        final int threadCount = 4; //Math.min(16, Runtime.getRuntime().availableProcessors() * 2);
+        final int threadCount = Math.min(16, Runtime.getRuntime().availableProcessors() * 2);
 
         System.out.println("Liquibase threading test will use " + threadCount + " threads.");
 
@@ -98,11 +109,10 @@ public class CreateDatabaseThreadingTest {
                     new ClassLoaderResourceAccessor(),
                     new JdbcConnection(con));
 
-
-            final List<ChangeSet> pending = liquibase.listUnrunChangeSets(new Contexts(), new LabelExpression());
-            if (pending.isEmpty()) {
-                fail("Expected pending database changesets");
-            }
+//            final List<ChangeSet> pending = liquibase.listUnrunChangeSets(new Contexts(), new LabelExpression());
+//            if (pending.isEmpty()) {
+//                fail("Expected pending database changesets");
+//            }
 
             liquibase.update(new Contexts(), new LabelExpression());
 
