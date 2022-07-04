@@ -21,10 +21,6 @@ public class ThreadLocalScopeManager extends ScopeManager {
         this.rootScope = rootScope;
     }
 
-    void clearScopeForCurrentThread() {
-        threadLocalScopes.remove();
-    }
-
     @Override
     public Scope getCurrentScope() {
         Scope current = threadLocalScopes.get();

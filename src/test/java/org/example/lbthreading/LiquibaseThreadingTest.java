@@ -3,15 +3,12 @@ package org.example.lbthreading;
 import liquibase.Contexts;
 import liquibase.LabelExpression;
 import liquibase.Liquibase;
-import liquibase.Scope;
-import liquibase.ScopeManager;
 import liquibase.changelog.ChangeSet;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.LiquibaseException;
 import liquibase.resource.ClassLoaderResourceAccessor;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.sql.Connection;
@@ -35,7 +32,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class CreateDatabaseThreadingTest {
+public class LiquibaseThreadingTest {
 
     private static final String DATABASE_NAME_PREFIX = "DB_MT_";
     private final ExecutorService executor = Executors.newCachedThreadPool();
@@ -43,27 +40,7 @@ public class CreateDatabaseThreadingTest {
 
     @Before
     public void setup() {
-        /**
-         * Scope manager is static property on Scope.
-         * Wrap and synchronized if concurrent execution is expected.
-         */
-
-
-        final Scope rootScope = Scope.getCurrentScope();
-
-        /*
-         * Synchronize access to singletons in root scope by wrapping the scope
-         */
-        final SynchronizedScope synchronizedScope = new SynchronizedScope(rootScope, null);
-        final ThreadLocalScopeManager threadLocalScopeManager = new ThreadLocalScopeManager(synchronizedScope);
-
-        Scope.setScopeManager(threadLocalScopeManager);
-
-        /*
-         * Set-scope-manager sets scope (in current thread, using unsynchronized),
-         * clear it, we want fallback to synchronized root-scope in all cases.
-         */
-        threadLocalScopeManager.clearScopeForCurrentThread();
+       LiquibaseThreading.initialize();
     }
 
     @After
@@ -71,14 +48,6 @@ public class CreateDatabaseThreadingTest {
         teardownLiveConnections();
         shutdownExecutorService();
     }
-
-    @Test
-    @Ignore("Ignore - we do not want the warmup!")
-    public void itCanMaintainSingleDatabase() {
-        final int threadCount = 1;
-        assertMaintainDatabases(threadCount);
-    }
-
 
     @Test
     public void itCanMaintainDatabasesInParallel() {
