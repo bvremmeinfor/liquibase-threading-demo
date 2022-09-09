@@ -4,6 +4,7 @@ Demo Liquibase in a multithreaded environment, related issues:
 * https://github.com/liquibase/liquibase/issues/2248 - ScopeManager heavy thread load
 * https://github.com/liquibase/liquibase/issues/2018 - Create ThreadLocal ScopeManager
 * https://github.com/liquibase/liquibase/pull/1768 - Root scope is initialization
+* https://github.com/liquibase/liquibase/issues/2966 - Multi-threaded locking issue and scope errors
 
 Demo uses unmodified Liquibase with custom scope manager (ThreadLocalScopeManager with synchronized root scope).
 Liquibase is initialized in synchronized block (scope init is unsynchronized static out-of-the-box). This is fairly
