@@ -1,6 +1,7 @@
 package org.example.lbthreading;
 
 import liquibase.Scope;
+import liquibase.ThreadLocalScopeManager;
 
 public final class LiquibaseThreading {
 
@@ -18,14 +19,7 @@ public final class LiquibaseThreading {
     public static synchronized void initialize() {
 
         if (threadLocalScopeManager == null) {
-            final Scope rootScope = Scope.getCurrentScope();
-
-            /*
-             * Synchronize access to singletons in root scope by wrapping the scope
-             */
-            final SynchronizedScope synchronizedScope = new SynchronizedScope(rootScope, null);
-            threadLocalScopeManager = new ThreadLocalScopeManager(synchronizedScope);
-
+            threadLocalScopeManager = new ThreadLocalScopeManager();
             Scope.setScopeManager(threadLocalScopeManager);
         }
     }
