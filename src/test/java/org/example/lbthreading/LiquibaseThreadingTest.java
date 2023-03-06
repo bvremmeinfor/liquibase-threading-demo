@@ -86,6 +86,8 @@ public class LiquibaseThreadingTest {
 
     private void maintainDatabase(final String dbName) {
 
+        System.out.println("-- maintaining database: " + dbName);
+
         final MemoryDatabase db = getDatabase(dbName);
 
         try (Connection con = db.getConnection()) {
@@ -107,13 +109,18 @@ public class LiquibaseThreadingTest {
             assertTrue("Expected to find table1 in " + tableNames, tableNames.contains("table1"));
             assertTrue("Expected to find table2 in " + tableNames, tableNames.contains("table2"));
 
+            System.out.println("-- database maintenance OK for: " + dbName);
+
         } catch (SQLException | LiquibaseException e) {
+            System.out.println("-- database maintenance failed for: " + dbName);
             throw new IllegalStateException(e.getMessage(), e);
         }
     }
 
     private void createMemoryDatabase(final String dbName) {
+        System.out.println("-- creating memory database: " + dbName);
         liveConnections.put(dbName, MemoryDatabase.create(dbName));
+        System.out.println("-- memory database created: " + dbName);
     }
 
     private MemoryDatabase getDatabase(final String dbName) {
