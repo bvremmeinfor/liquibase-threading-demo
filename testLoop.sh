@@ -4,11 +4,6 @@ i=1;
 errors=0;
 while [[ i -le 100 ]] ;
 do
-  if [[ i -gt 1 ]] ; then
-    echo " -- sleep a bit to settle down after last run (process cleanup)"
-    sleep 2 
-  fi 
-
   echo "Iteration #${i} - errors ${errors}";
 
   rc=$(mvn test 2>&1)
