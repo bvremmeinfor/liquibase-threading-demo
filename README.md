@@ -10,7 +10,7 @@ Test uses memory database, no additional setup required.
 
 Issues in 4.19.1:
 * new threading issue found related to MDC handling in Scope (+memory leak). See [Scope](https://github.com/liquibase/liquibase/pull/3574/files#diff-02cf9dc5731d4b4cab085adaefa3a0c592e2af76b14c0e0f781f4544c7153007) here.
-* 10-20% chance for threading related error (usually some kind of NPE)
+* 1-2% chance for threading related error (usually some kind of NPE)
 * MDCObjects in static Scope map are never removed, memory leak
 
 Issues prior to 4.17.0:
