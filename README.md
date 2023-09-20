@@ -8,6 +8,12 @@ used in a multi-threaded environment.
 Run testLoop.sh script for 100 individual tests with error reporting (new JVM with fresh empty statics every time).
 Test uses memory database, no additional setup required.
 
+Issues in 4.23.2
+* 0.5% chance for threading related error (NPE, always in AbstractJdbcDatabase)
+* threading issue found for AbstractJdbcDatabase.getRanChangeSetList() - partial synchronization causes NPE
+* Note: Memory leak for MDCObjects in root Scope for long running JVMs - 'databaseChangelogSQL' entries.
+  Maybe only an issue when only changelog related operations performed (typical health-check)
+
 Issues in 4.19.1:
 * new threading issue found related to MDC handling in Scope (+memory leak). See [Scope](https://github.com/liquibase/liquibase/pull/3574/files#diff-02cf9dc5731d4b4cab085adaefa3a0c592e2af76b14c0e0f781f4544c7153007) here.
 * 1-2% chance for threading related error (usually some kind of NPE) - your mileage may vary (0.4% - 2.7% measured in extended test runs)
