@@ -12,7 +12,7 @@ Issues in 4.23.2
 * 0.5% chance for threading related error (NPE, always in AbstractJdbcDatabase)
 * threading issue found for AbstractJdbcDatabase.getRanChangeSetList() - partial synchronization causes NPE
 * Note: Memory leak for MDCObjects in root Scope for long running JVMs - 'databaseChangelogSQL' entries.
-  Maybe only an issue when only changelog related operations performed (typical health-check)
+  Maybe only an issue when only changelog/listlock related operations performed with deprecated methods (typical health-check)
 
 Issues in 4.19.1:
 * new threading issue found related to MDC handling in Scope (+memory leak). See [Scope](https://github.com/liquibase/liquibase/pull/3574/files#diff-02cf9dc5731d4b4cab085adaefa3a0c592e2af76b14c0e0f781f4544c7153007) here.
