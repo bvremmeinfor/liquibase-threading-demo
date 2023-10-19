@@ -3,17 +3,17 @@ package org.example.lbthreading;
 import liquibase.Contexts;
 import liquibase.LabelExpression;
 import liquibase.Liquibase;
+import liquibase.Scope;
 import liquibase.changelog.ChangeSet;
 import liquibase.database.jvm.JdbcConnection;
-import liquibase.exception.LiquibaseException;
 import liquibase.resource.ClassLoaderResourceAccessor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +40,7 @@ public class LiquibaseThreadingTest {
 
     @Before
     public void setup() {
-       LiquibaseThreading.initialize();
+        LiquibaseThreading.initialize();
     }
 
     @After
@@ -81,7 +81,7 @@ public class LiquibaseThreadingTest {
             }));
         }
 
-        maintainTasks.forEach(f -> assertResolved(f));
+        maintainTasks.forEach(LiquibaseThreadingTest::assertResolved);
     }
 
     private void maintainDatabase(final String dbName) {
@@ -92,26 +92,26 @@ public class LiquibaseThreadingTest {
 
         try (Connection con = db.getConnection()) {
 
-            final Liquibase liquibase = new Liquibase(
-                    "/db_schema/changelog.xml",
-                    new ClassLoaderResourceAccessor(),
-                    new JdbcConnection(con));
+            Scope.child(Collections.emptyMap(), () -> {
 
-            final List<ChangeSet> pending = liquibase.listUnrunChangeSets(new Contexts(), new LabelExpression());
-            if (pending.isEmpty()) {
-                fail("Expected pending database changesets");
-            }
+                final Liquibase liquibase = new Liquibase("/db_schema/changelog.xml", new ClassLoaderResourceAccessor(), new JdbcConnection(con));
 
-            liquibase.update(new Contexts(), new LabelExpression());
+                final List<ChangeSet> pending = liquibase.listUnrunChangeSets(new Contexts(), new LabelExpression());
+                if (pending.isEmpty()) {
+                    fail("Expected pending database changesets");
+                }
 
-            final List<String> tableNames = db.queryTables();
+                liquibase.update(new Contexts(), new LabelExpression());
 
-            assertTrue("Expected to find table1 in " + tableNames, tableNames.contains("table1"));
-            assertTrue("Expected to find table2 in " + tableNames, tableNames.contains("table2"));
+                final List<String> tableNames = db.queryTables();
 
-            System.out.println("-- database maintenance OK for: " + dbName);
+                assertTrue("Expected to find table1 in " + tableNames, tableNames.contains("table1"));
+                assertTrue("Expected to find table2 in " + tableNames, tableNames.contains("table2"));
 
-        } catch (SQLException | LiquibaseException e) {
+                System.out.println("-- database maintenance OK for: " + dbName);
+            });
+
+        } catch (Exception e) {
             System.out.println("-- database maintenance failed for: " + dbName);
             throw new IllegalStateException(e.getMessage(), e);
         }
@@ -144,10 +144,12 @@ public class LiquibaseThreadingTest {
         executor.shutdownNow();
 
         try {
-            executor.awaitTermination(5, TimeUnit.SECONDS);
+            if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+                throw new IllegalStateException("Failed to terminate all threads in a timely fashion");
+            }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException("Failed to terminate all threads in a timely fashion");
+            throw new IllegalStateException("Interrupted while waiting for all threads to terminate in a timely fashion");
         }
     }
 
@@ -155,11 +157,9 @@ public class LiquibaseThreadingTest {
         final Map<String, MemoryDatabase> all = new LinkedHashMap<>(liveConnections);
         liveConnections.clear();
 
-        all.values().stream().forEach(MemoryDatabase::close);
+        all.values().forEach(MemoryDatabase::close);
 
-        final List<String> notClosed = all.keySet().stream()
-                .filter(MemoryDatabase::databaseExists)
-                .collect(Collectors.toList());
+        final List<String> notClosed = all.keySet().stream().filter(MemoryDatabase::databaseExists).collect(Collectors.toList());
 
         if (!notClosed.isEmpty()) {
             throw new IllegalStateException("Failed to close all databases, open: " + notClosed);

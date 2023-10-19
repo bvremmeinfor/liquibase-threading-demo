@@ -9,7 +9,8 @@ public final class LiquibaseThreading {
     private static ThreadLocalScopeManager threadLocalScopeManager;
 
 
-    private LiquibaseThreading() {}
+    private LiquibaseThreading() {
+    }
 
 
     /**

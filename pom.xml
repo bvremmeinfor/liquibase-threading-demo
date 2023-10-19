@@ -10,12 +10,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
-        <!-- Go old-school for this sample, tons of Java8 out there -->
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <!-- replace with this for newer release -->
-        <!-- maven.compiler.release>17</maven.compiler.release -->
+        <maven.compiler.release>17</maven.compiler.release>
     </properties>
 
     <dependencies>
