@@ -7,6 +7,9 @@ used in a multithreaded environment.
 Run testLoop.sh script for 100 individual tests with error reporting (new JVM with fresh empty statics every time).
 Test uses memory database, no additional setup required.
 
+Issues in 4.26.0
+* None - looks good!
+
 Issues in 4.23.2
 * 0.5% chance for threading related error (NPE, always in AbstractJdbcDatabase)
 * threading issue found for AbstractJdbcDatabase.getRanChangeSetList() - partial synchronization causes NPE 
