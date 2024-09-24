@@ -7,6 +7,11 @@ used in a multithreaded environment.
 Run testLoop.sh script for 100 individual tests with error reporting (new JVM with fresh empty statics every time).
 Test uses memory database, no additional setup required.
 
+Issues in 4.29.2
+* None - looks good!
+* Could remove use of ThreadLocalScopeManager - default is thread safe
+
+
 Issues in 4.26.0
 * None - looks good!
 

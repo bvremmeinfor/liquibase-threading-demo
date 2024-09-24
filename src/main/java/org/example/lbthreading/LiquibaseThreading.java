@@ -1,12 +1,10 @@
 package org.example.lbthreading;
 
 import liquibase.Scope;
+import liquibase.ScopeManager;
 import liquibase.ThreadLocalScopeManager;
 
 public final class LiquibaseThreading {
-
-    /* Guarded by this class */
-    private static ThreadLocalScopeManager threadLocalScopeManager;
 
 
     private LiquibaseThreading() {
@@ -14,15 +12,13 @@ public final class LiquibaseThreading {
 
 
     /**
-     * Scope manager is static property on Scope.
      * Wrap and synchronized if *concurrent* initialization is expected (enforce single init).
      */
     public static synchronized void initialize() {
-
-        if (threadLocalScopeManager == null) {
-            threadLocalScopeManager = new ThreadLocalScopeManager();
-            Scope.setScopeManager(threadLocalScopeManager);
-        }
+        /*
+         * No special initialization required
+         * Note: ThreadLocaleScopeManager deprecated in 4.28.0
+         */
     }
 
 }
