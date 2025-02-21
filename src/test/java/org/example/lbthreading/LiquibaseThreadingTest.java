@@ -92,7 +92,11 @@ public class LiquibaseThreadingTest {
 
         try (Connection con = db.getConnection()) {
 
-            Scope.child(Collections.emptyMap(), () -> {
+            final Map<String, Object> liquibaseConfiguration = Map.of(
+                    "liquibase.analytics.enabled", false // Disable analytics
+            );
+
+            Scope.child(liquibaseConfiguration, () -> {
 
                 final Liquibase liquibase = new Liquibase("/db_schema/changelog.xml", new ClassLoaderResourceAccessor(), new JdbcConnection(con));
 
