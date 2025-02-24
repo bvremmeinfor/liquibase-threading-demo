@@ -7,6 +7,14 @@ do
   echo "Iteration #${i} - errors ${errors}";
 
   rc=$(mvn test 2>&1)
+  ret=$?
+
+  if [[ ret -ne 0 ]]; then
+     echo "ERROR: Maven command failed (code ${ret}) - exiting"
+     echo $rc
+     exit 1
+  fi
+  
   rc2=$(echo "$rc" | grep "Tests run")
 
   if [[ $rc =~ "BUILD FAILURE" ]]; then

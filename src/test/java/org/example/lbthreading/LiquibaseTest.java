@@ -13,7 +13,6 @@ import org.junit.Test;
 
 import java.sql.Connection;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,10 +31,16 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class LiquibaseThreadingTest {
+/**
+ * Simple test - create one database without spawning threads.
+ * <p>
+ *     This is done to provoke interference between tests spawning threads and
+ *     running on the test thread. See {@link Scope}.
+ * </p>
+ */
+public class LiquibaseTest {
 
-    private static final String DATABASE_NAME_PREFIX = "DB_MT_";
-    private final ExecutorService executor = Executors.newCachedThreadPool();
+    private static final String DATABASE_NAME_PREFIX = "DB_SINGLE_";
     private final Map<String, MemoryDatabase> liveConnections = new ConcurrentHashMap<>();
 
     @Before
@@ -46,43 +51,14 @@ public class LiquibaseThreadingTest {
     @After
     public void tearDown() {
         teardownLiveConnections();
-        shutdownExecutorService();
     }
 
     @Test
-    public void itCanMaintainDatabasesInParallel() {
-        /*
-         * 4 threads seems to be sufficient to provoke most errors
-         */
-        final int threadCount = Math.min(16, Runtime.getRuntime().availableProcessors() * 2);
-
-        System.out.println("Liquibase threading test will use " + threadCount + " threads.");
-
-        assertMaintainDatabases(threadCount);
-    }
-
-
-    private void assertMaintainDatabases(final int threadCount) {
-        final List<Future<?>> maintainTasks = new ArrayList<>();
-
-        /*
-         * We want to stress initialization as much as possible, so we
-         * wait for all thread ready before we start.
-         */
-        final ThreadAligner threadAligner = new ThreadAligner(threadCount);
-
-        for (int i = 0; i < threadCount; i++) {
-            final String dbName = DATABASE_NAME_PREFIX + i;
+    public void itCanMaintainDatabase() {
+            final String dbName = DATABASE_NAME_PREFIX + "0";
 
             createMemoryDatabase(dbName);
-
-            maintainTasks.add(executor.submit(() -> {
-                threadAligner.awaitAllReady();
-                maintainDatabase(dbName);
-            }));
-        }
-
-        maintainTasks.forEach(LiquibaseThreadingTest::assertResolved);
+            maintainDatabase(dbName);
     }
 
     private void maintainDatabase(final String dbName) {
@@ -134,29 +110,6 @@ public class LiquibaseThreadingTest {
         return db;
     }
 
-    private static <T> T assertResolved(Future<T> future) {
-        try {
-            return future.get(30, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException("Thread interrupted");
-        } catch (TimeoutException | ExecutionException e) {
-            throw new IllegalStateException(e.getMessage(), e);
-        }
-    }
-
-    private void shutdownExecutorService() {
-        executor.shutdownNow();
-
-        try {
-            if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
-                throw new IllegalStateException("Failed to terminate all threads in a timely fashion");
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException("Interrupted while waiting for all threads to terminate in a timely fashion");
-        }
-    }
 
     private void teardownLiveConnections() {
         final Map<String, MemoryDatabase> all = new LinkedHashMap<>(liveConnections);
@@ -168,26 +121,6 @@ public class LiquibaseThreadingTest {
 
         if (!notClosed.isEmpty()) {
             throw new IllegalStateException("Failed to close all databases, open: " + notClosed);
-        }
-    }
-
-    private static class ThreadAligner {
-
-        private final CyclicBarrier barrier;
-
-        public ThreadAligner(int threads) {
-            this.barrier = new CyclicBarrier(threads);
-        }
-
-        void awaitAllReady() {
-            try {
-                barrier.await();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new IllegalStateException(e);
-            } catch (BrokenBarrierException e) {
-                throw new IllegalStateException(e);
-            }
         }
     }
 

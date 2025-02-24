@@ -8,7 +8,9 @@ Run testLoop.sh script for 100 individual tests with error reporting (new JVM wi
 Test uses memory database, no additional setup required.
 
 Issues in 4.31.1
-* None - looks good!
+* Scope errors when executing mix of operations on main thread and spawned threads.
+  Added test case creating single DB on main thread to provoke.
+  Related to https://github.com/liquibase/liquibase/issues/6588
 * Disabled analytics introduced in 4.30.0 (https://docs.liquibase.com/analytics/home.html)
 
 Issues in 4.29.2
