@@ -12,6 +12,10 @@ Issues in 4.31.1
   Added test case creating single DB on main thread to provoke.
   Related to https://github.com/liquibase/liquibase/issues/6588
 * Disabled analytics introduced in 4.30.0 (https://docs.liquibase.com/analytics/home.html)
+* NEW - not covered by this test, confirmed in 'real' project related to locks not released
+  * https://github.com/liquibase/liquibase/issues/6831 - spot on regarding locks sometimes not released
+  * https://github.com/liquibase/liquibase/issues/6076 - transition to `static`
+  * https://github.com/liquibase/liquibase/issues/6850 - possibly related? Improved cache keys in `static` cache
 
 Issues in 4.29.2
 * None - looks good!
