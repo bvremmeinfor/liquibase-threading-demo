@@ -21,5 +21,6 @@
 	<property name="clob.type" value="TEXT" dbms="postgresql" />
 	
 	<include file="db_schema/changelog-1.xml"/>
+	<include file="db_schema/changelog-2.xml"/>
 
 </databaseChangeLog>

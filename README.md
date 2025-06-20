@@ -8,14 +8,20 @@ Run testLoop.sh script for 100 individual tests with error reporting (new JVM wi
 Test uses memory database, no additional setup required.
 
 Issues in 4.31.1
+* Threading issue - Liquibase sometimes fails to release locks
 * Scope errors when executing mix of operations on main thread and spawned threads.
   Added test case creating single DB on main thread to provoke.
-  Related to https://github.com/liquibase/liquibase/issues/6588
+  * Workaround is to clear Liquibase root scope - see LiquibaseThreading class 
+  * Related to https://github.com/liquibase/liquibase/issues/6588
 * Disabled analytics introduced in 4.30.0 (https://docs.liquibase.com/analytics/home.html)
-* NEW - not covered by this test, confirmed in 'real' project related to locks not released
-  * https://github.com/liquibase/liquibase/issues/6831 - spot on regarding locks sometimes not released
-  * https://github.com/liquibase/liquibase/issues/6076 - transition to `static`
-  * https://github.com/liquibase/liquibase/issues/6850 - possibly related? Improved cache keys in `static` cache
+* Updated to cover locks not released issue
+  * This one slipped under the radar as existing tests did not verify Liquibase locks after execution
+  * Test execution pattern also masked the issue, we now use multiple updates to raise database level
+    * This covers upgrade from empty, then partial upgrade
+  * Related issues  
+    * https://github.com/liquibase/liquibase/issues/6831 - spot on regarding locks sometimes not released
+    * https://github.com/liquibase/liquibase/issues/6076 - transition to `static`
+    * https://github.com/liquibase/liquibase/issues/6850 - possibly related? Improved cache keys in `static` cache
 
 Issues in 4.29.2
 * None - looks good!

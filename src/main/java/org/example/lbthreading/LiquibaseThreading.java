@@ -15,10 +15,13 @@ public final class LiquibaseThreading {
      * Wrap and synchronized if *concurrent* initialization is expected (enforce single init).
      */
     public static synchronized void initialize() {
+
         /*
-         * No special initialization required
-         * Note: ThreadLocaleScopeManager deprecated in 4.28.0
+         * Release the scope attached to this thread - it can be affected by other threads.
+         * From 4.31.1
          */
+        System.out.println("!!! CLEARING LIQUIBASE SCOPE MANAGER ON ROOT THREAD !!!");
+        Scope.setScopeManager(null);
     }
 
 }

@@ -26,8 +26,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -52,7 +54,7 @@ public class LiquibaseThreadingTest {
     @Test
     public void itCanMaintainDatabasesInParallel() {
         /*
-         * 4 threads seems to be sufficient to provoke most errors
+         * We need many threads to provoke issues with Liquibase lock release
          */
         final int threadCount = Math.min(16, Runtime.getRuntime().availableProcessors() * 2);
 
@@ -106,19 +108,50 @@ public class LiquibaseThreadingTest {
                     fail("Expected pending database changesets");
                 }
 
-                liquibase.update(new Contexts(), new LabelExpression());
+                /*
+                 * First upgrade
+                 */
+                liquibase.update(new Contexts(), new LabelExpression("1.0"));
+                System.out.println("-- database maintenance (step 1 - create) OK for: " + dbName);
 
-                final List<String> tableNames = db.queryTables();
+                final List<String> tableNamesAfterFirstMigration = db.queryTables();
 
-                assertTrue("Expected to find table1 in " + tableNames, tableNames.contains("table1"));
-                assertTrue("Expected to find table2 in " + tableNames, tableNames.contains("table2"));
+                assertTrue("Expected to find table1 in " + tableNamesAfterFirstMigration, tableNamesAfterFirstMigration.contains("table1"));
+                assertTrue("Expected to find table2 in " + tableNamesAfterFirstMigration, tableNamesAfterFirstMigration.contains("table2"));
+                assertFalse("Did NOT expect to find table_v2_conf in " + tableNamesAfterFirstMigration, tableNamesAfterFirstMigration.contains("table_v2_conf"));
 
-                System.out.println("-- database maintenance OK for: " + dbName);
+
+                /*
+                 * Second upgrade
+                 */
+                assertLiquibaseLocksReleased(dbName, db); // Dangling locks from step one will block this step!
+
+                liquibase.update(new Contexts(), new LabelExpression("2.0"));
+
+                final List<String> tableNamesAfterSecondMigration = db.queryTables();
+                assertTrue("Expected to find table_v2_conf in " + tableNamesAfterSecondMigration, tableNamesAfterSecondMigration.contains("table_v2_conf"));
+
+                System.out.println("-- database maintenance (step 2) OK for: " + dbName);
+
+                assertLiquibaseLocksReleased(dbName, db); // This can still fail
             });
 
         } catch (Exception e) {
             System.out.println("-- database maintenance failed for: " + dbName);
             throw new IllegalStateException(e.getMessage(), e);
+        }
+    }
+
+    private static void assertLiquibaseLocksReleased(String dbName, MemoryDatabase db) {
+        final List<Map<String, String>> locks = db.query("SELECT * FROM DATABASECHANGELOGLOCK");
+
+        if (locks.size() != 1) {
+            throw new AssertionError("Expected exactly one lock but got: " + locks + " in " + dbName);
+        }
+
+        final Map<String, String> lock = locks.get(0);
+        if (!"FALSE".equals(lock.get("locked"))) {
+            fail("Expected NO Liquibase locks after upgrade of " + dbName + ", but found: " + lock);
         }
     }
 

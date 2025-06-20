@@ -82,12 +82,17 @@ public class LiquibaseTest {
                     fail("Expected pending database changesets");
                 }
 
-                liquibase.update(new Contexts(), new LabelExpression());
+                liquibase.update(new Contexts(), new LabelExpression("1.0"));
+                liquibase.update(new Contexts(), new LabelExpression("2.0"));
 
                 final List<String> tableNames = db.queryTables();
 
                 assertTrue("Expected to find table1 in " + tableNames, tableNames.contains("table1"));
                 assertTrue("Expected to find table2 in " + tableNames, tableNames.contains("table2"));
+                assertTrue("Expected to find table_v2_conf in " + tableNames, tableNames.contains("table_v2_conf"));
+
+
+                assertLiquibaseLocksReleased(dbName, db);
 
                 System.out.println("-- database maintenance OK for: " + dbName);
             });
@@ -95,6 +100,19 @@ public class LiquibaseTest {
         } catch (Exception e) {
             System.out.println("-- database maintenance failed for: " + dbName);
             throw new IllegalStateException(e.getMessage(), e);
+        }
+    }
+
+    private static void assertLiquibaseLocksReleased(String dbName, MemoryDatabase db) {
+        final List<Map<String, String>> locks = db.query("SELECT * FROM DATABASECHANGELOGLOCK");
+
+        if (locks.size() != 1) {
+            throw new AssertionError("Expected exactly one lock but got: " + locks + " in " + dbName);
+        }
+
+        final Map<String, String> lock = locks.get(0);
+        if (!"FALSE".equals(lock.get("locked"))) {
+            fail("Expected NO Liquibase locks after upgrade of " + dbName + ", but found: " + lock);
         }
     }
 
